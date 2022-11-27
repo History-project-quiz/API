@@ -75,6 +75,7 @@ async def increase_score(delta: int, tg_id: int, db_session: AsyncSession = Depe
     for el in users:
         user = el[0]
         data.append({"name": user.name, "score": user.score})
+    data.sort(key=lambda el: el["score"], reverse=True)
     await WEBSOCKET.send_json(data)
     return "success"
 
