@@ -5,3 +5,4 @@ sqlalchemy
 sqlalchemy_serializer
 asyncmy
 cryptography
+websockets

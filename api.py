@@ -9,9 +9,11 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.requests import Request
+from fastapi.websockets import WebSocket
 from sqlalchemy.ext.asyncio import AsyncSession
 
 load_dotenv()
+WEBSOCKET: WebSocket = None
 app = FastAPI()
 origins = ["*"]
 app.add_middleware(
@@ -68,6 +70,12 @@ async def increase_score(delta: int, tg_id: int, db_session: AsyncSession = Depe
     user = (await dao.get_objects(User, property_filter=[(User.tg_id, tg_id)]))[0][0]
     user.score += delta
     await db_session.commit()
+    data = []
+    users = await dao.get_objects(User)
+    for el in users:
+        user = el[0]
+        data.append({"name": user.name, "score": user.score})
+    await WEBSOCKET.send_json(data)
     return "success"
 
 
@@ -78,6 +86,15 @@ async def finish_quiz(tg_id: int, db_session: AsyncSession = Depends(get_session
     user.completed = True
     await db_session.commit()
     return "success"
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    global WEBSOCKET
+    await websocket.accept()
+    WEBSOCKET = websocket
+    while True:
+        await websocket.receive_text()
 
 
 if __name__ == '__main__':
