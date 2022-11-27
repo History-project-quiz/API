@@ -1,0 +1,7 @@
+uvicorn==0.20.0
+fastapi
+python-dotenv
+sqlalchemy
+sqlalchemy_serializer
+asyncmy
+cryptography
