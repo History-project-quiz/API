@@ -55,13 +55,19 @@ async def startup():
 
 
 @app.get("/init_score")
-async def get_score(tg_id: int, name: str, db_session: AsyncSession = Depends(get_session)):
+async def get_score(tg_id: int, db_session: AsyncSession = Depends(get_session)):
     dao = DataAccessObject(db_session)
     user = await dao.get_objects(User, property_filter=[(User.tg_id, tg_id)])
     if not user:
-        await dao.add_object(User(tg_id=tg_id, name=name, score=0, completed=False))
         return None, False
     return user[0][0].score, user[0][0].completed
+
+
+@app.post("/add_user")
+async def add_user(tg_id: int, name: str, db_session: AsyncSession = Depends(get_session)):
+    dao = DataAccessObject(db_session)
+    await dao.add_object(User(tg_id=tg_id, name=name, score=0, completed=False))
+    return "Success"
 
 
 @app.put("/score")
@@ -76,7 +82,7 @@ async def increase_score(delta: int, tg_id: int, db_session: AsyncSession = Depe
         user = el[0]
         data.append({"name": user.name, "score": user.score, "update_on": user.updated_at})
     data.sort(key=lambda el: (-el["score"], el["update_on"]))
-    await WEBSOCKET.send_json(data)
+    await WEBSOCKET.send_json([{"name": el["name"], "score": el["score"]} for el in data])
     return "success"
 
 
